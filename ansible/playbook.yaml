@@ -1,5 +1,5 @@
-- name: Kubernetes Installation
-  hosts: virtualmachines
+- name: Kubernetes Prerequisites
+  hosts: all_groups
   become: true
   tasks:
     - name: Ping my hosts
@@ -130,12 +130,65 @@
         name: kubectl
         selection: hold
 
-- name: Kubernetes Workers
+- name: Create Cluster using Kubeadm
+  hosts: controlplanes
+  become: true
+  tasks:
+    - name: Initialize Cluster
+      shell: 
+        cmd: | 
+          kubeadm init --pod-network-cidr 10.244.0.0/16 --apiserver-advertise-address=192.168.56.2
+      register: kubeadm_msg
+    - debug: var=kubeadm_msg.stdout_lines    
+    
+    - name: Get join command
+      shell: kubeadm token create --print-join-command 2>/dev/null
+      register: join_command_raw
+
+    - name: Set join command
+      set_fact:
+        join_command: "{{ join_command_raw.stdout_lines[0] }}"
+
+    - name: Create /home/vagrant/.kube Directory
+      file:
+        path: "/home/vagrant/.kube"
+        state: directory
+      become_user: vagrant
+
+    - name: Copy /etc/kubernetes/admin.conf to /home/vagrant/.kube/config
+      copy:
+        src: /etc/kubernetes/admin.conf
+        remote_src: yes
+        dest: /home/vagrant/.kube/config
+          # force: no
+
+    - name: Set /home/vagrant/.kube Directory Owner and Group to vagrant
+      shell:
+        cmd: sudo chown $(id -u):$(id -g) $HOME/.kube/config
+      become_user: vagrant
+
+    - name: Install Weave Net
+      shell: 
+        cmd: | 
+          kubectl apply -f https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml
+      become_user: vagrant
+
+    - name: get join command
+      shell: kubeadm token create --print-join-command 2>/dev/null
+      register: join_command_raw
+      become_user: vagrant
+
+    - name: set join command
+      set_fact:
+        join_command: "{{ join_command_raw.stdout_lines[0] }}"
+      become_user: vagrant
+
+- name: Add Workers to Cluster
   hosts: workers
   become: true
   tasks:
-    - name: Join Cluster
-      shell: 
-        cmd: | 
-          kubeadm join 192.168.56.2:6443 --token <TOKEN HERE> \
-          --discovery-token-ca-cert-hash sha256:<TOKEN HERE>
+    - name: join cluster
+      shell: "{{ hostvars['kubemaster'].join_command }} >> node_joined.txt"
+      args:
+        chdir: $HOME
+        creates: node_joined.txt

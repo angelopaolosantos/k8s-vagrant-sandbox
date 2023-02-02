@@ -40,6 +40,13 @@ Vagrant.configure("2") do |config|
   # argument is a set of non-required options.
   # config.vm.synced_folder "../data", "/vagrant_data"
 
+  # Added hack to fix on windows WSL
+  config.vm.synced_folder '.', '/vagrant', disabled: true
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.customize [ "modifyvm", :id, "--uartmode1", "disconnected" ]
+  end
+
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.
   # Example for VirtualBox:
@@ -77,31 +84,47 @@ Vagrant.configure("2") do |config|
         node.vm.provision "setup-dns", type: "shell", :path => "scripts/update-dns.sh"
 
       end
+
   end
 
 
   # Provision Worker Nodes
   (1..NUM_WORKER_NODE).each do |i|
     config.vm.define "kubenode0#{i}" do |node|
-        node.vm.provider "virtualbox" do |vb|
-            vb.name = "kubenode0#{i}"
-            vb.memory = 2048
-            vb.cpus = 2
+      node.vm.provider "virtualbox" do |vb|
+          vb.name = "kubenode0#{i}"
+          vb.memory = 2048
+          vb.cpus = 2
+      end
+      # set hostname
+      node.vm.hostname = "kubenode0#{i}"
+
+      # set network ip
+      node.vm.network :private_network, ip: IP_NW + "#{NODE_IP_START + i}"
+      
+      #forward ssh port to some local port
+      node.vm.network "forwarded_port", guest: 22, host: "#{2720 + i}"
+
+      node.vm.provision "setup-hosts", :type => "shell", :path => "scripts/setup-hosts.sh" do |s|
+        s.args = ["enp0s8"] # pass variable to script, gets ip assigned to interface matching the variable
+      end
+
+      node.vm.provision "setup-dns", type: "shell", :path => "scripts/update-dns.sh"
+
+      if i == NUM_WORKER_NODE
+        node.vm.provision "ansible" do |ansible|
+          ansible.playbook = "ansible/playbook.yaml"
+          ansible.limit = "all"
+          ansible.verbose = "v"
+          ansible.groups = {
+            "controlplanes" => ["kubemaster"],
+            "workers" => ["kubenode0[1:2]"],
+            "all_groups:children" => ["controlplanes", "workers" ]
+          }
         end
-        # set hostname
-        node.vm.hostname = "kubenode0#{i}"
-
-        # set network ip
-        node.vm.network :private_network, ip: IP_NW + "#{NODE_IP_START + i}"
-        
-        #forward ssh port to some local port
-        node.vm.network "forwarded_port", guest: 22, host: "#{2720 + i}"
-
-        node.vm.provision "setup-hosts", :type => "shell", :path => "scripts/setup-hosts.sh" do |s|
-          s.args = ["enp0s8"] # pass variable to script, gets ip assigned to interface matching the variable
-        end
-
-        node.vm.provision "setup-dns", type: "shell", :path => "scripts/update-dns.sh"
+      end
     end
+
   end
+
 end
