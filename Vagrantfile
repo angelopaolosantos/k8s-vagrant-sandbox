@@ -110,7 +110,8 @@ Vagrant.configure("2") do |config|
       end
 
       node.vm.provision "setup-dns", type: "shell", :path => "scripts/update-dns.sh"
-
+      
+      # Provision Ansible on the last node defined. Ansible will run in parallel since the other nodes are already provisioned. 
       if i == NUM_WORKER_NODE
         node.vm.provision "ansible" do |ansible|
           ansible.playbook = "ansible/playbook.yaml"
