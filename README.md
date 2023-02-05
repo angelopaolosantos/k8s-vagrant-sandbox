@@ -13,16 +13,22 @@ This Vagrant file will provision a working kubernetes cluster consisting of 1 co
 
 1. Create this file in wsl to fix error *"private key not secure"*. Resolves permissions issue since files are on windows host and not WSL
 
-  > */etc/wsl.conf*  
-  > `[automount]`  
-  > `options = "metadata,umask=22,fmask=11"`
+*/etc/wsl.conf*
+```
+[automount]  
+options = "metadata,umask=22,fmask=11"
+```
 
 2. Append snippet into wsl .bashrc or .zshrc
 
-  > `export VAGRANT_WSL_ENABLE_WINDOWS_ACCESS="1"`  
-  > `export VAGRANT_WSL_WINDOWS_ACCESS_USER_HOME_PATH="/mnt/c/Users/angelos/"`  
-  > `export PATH="$PATH:/mnt/d/Program Files/Oracle/VirtualBox"`
+```
+export VAGRANT_WSL_ENABLE_WINDOWS_ACCESS="1"  
+export VAGRANT_WSL_WINDOWS_ACCESS_USER_HOME_PATH="/mnt/c/Users/my_username/"  
+export PATH="$PATH:/mnt/d/Program Files/Oracle/VirtualBox"
+```
 
 3. On windows, go to Control Panel\All Control Panel Items\Windows Defender Firewall\Allowed apps. Check all VirtualBox items (e.g VirtualBox Headless Frontend, VirtualBox Virtual Machine, etc.)
 
-4. Run Vagrant, while on repository root folder type `vagrant up`
+4. On WSL, run `vagrant plugin install virtualbox_WSL2`
+
+5. Run Vagrant, while on repository root folder type `vagrant up`
