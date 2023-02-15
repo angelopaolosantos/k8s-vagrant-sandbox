@@ -220,30 +220,31 @@
         src: metallb/.
         remote_src: no
         dest: /home/vagrant/metallb/
-    - name: Install MetalLB IP Address Pool and L2 Advertisement Manifests
+    - name: Wait for MetalLB to be available, then install MetalLB IP Address Pool and L2 Advertisement Manifests 
       shell: |
+        kubectl wait deployment -n metallb-system controller --for condition=Available=True --timeout=90s
         kubectl apply -f ./metallb/
 
-- name: Install Ingress
+- name: Install Nginx Ingress
   hosts: kubemaster
   become: true
   become_user: vagrant
   tasks:
-    - name: Install Ingress via YAML Manifests
+    - name: Install Nginx Ingress via YAML Manifests
       shell: |
         kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.5.1/deploy/static/provider/cloud/deploy.yaml
-    - name: Get Ingress IP
+    - name: Get ingress ip
       shell: |
         kubectl get services --namespace ingress-nginx \
         ingress-nginx-controller \  
         --output jsonpath='{.status.loadBalancer.ingress[0].ip}'
       register: ingress_ip
 
-    - name: set ingress_ip
+    - name: Set ingress_ip
       set_fact:
         my_ingress_ip: '{{ ingress_ip.stdout_lines[0] }}'
 
-- name: Add host entry for local registry
+- name: Add host entry for local registry (optional)
   hosts: all_groups
   become: true
   vars:
