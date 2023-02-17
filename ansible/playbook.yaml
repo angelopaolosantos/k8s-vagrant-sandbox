@@ -244,21 +244,84 @@
       set_fact:
         my_ingress_ip: '{{ ingress_ip.stdout_lines[0] }}'
 
-- name: Add host entry for local registry (optional)
+- name: Install Dnsmasq
   hosts: all_groups
   become: true
   vars:
-    registry_hostname: registry.localdev.me
+    registry_hostname: localdev.me
     registry_ip: "{{ hostvars['kubemaster'].my_ingress_ip }}"
   tasks:
     - name: Print message
-      ansible.builtin.debug:
-        msg: Add host entry - {{ hostvars['kubemaster'].my_ingress_ip }} {{ registry_hostname }}
-    - name: Check if host entry exists
-      shell: grep -c "{{ registry_ip }}\s\+\{{ registry_hostname }}" /etc/hosts
-      register: registry_output
-      failed_when: registry_output.rc == 2 # grep returns error code 2 for exceptions
-      changed_when: false # so that the task won't be reported as "changed" every single time
-    - name: Add entry
-      when: registry_output.stdout == '0'
-      shell: echo "{{ registry_ip }}  {{ registry_hostname }}" | tee -a /etc/hosts
+      apt:
+        update_cache: yes
+        pkg:
+          - dnsmasq
+    - name: Copy dnsmasq.conf
+      copy:
+        src: dnsmasq/dnsmasq.conf
+        remote_src: no
+        dest: /etc/dnsmasq.conf
+    - name: Create kubeadm.k8s.conf
+      copy:
+        dest: /etc/dnsmasq.d/kubeadm.k8s.conf
+        content: |
+          address=/{{ registry_hostname }}/{{ registry_ip }}
+    - name: Enable dnsmasq
+      ansible.builtin.systemd:
+        name: dnsmasq
+        enabled: yes
+        masked: no
+        state: started
+
+    - name: Copy root certificates
+      copy:
+        src: certs/.
+        remote_src: no
+        dest: /opt/ca-certificates/
+        mode: 0444
+
+- name: Install Cert Manager
+  hosts: kubemaster
+  become: true 
+  become_user: vagrant
+  tasks:  
+    - name: Install Cert Manager  via YAML Manifests
+      shell: |
+        kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.yaml
+    - name: Install Cert Manager  via YAML Manifests
+      shell: |
+        kubectl create secret tls -n cert-manager root-ca \
+        --cert=/opt/ca-certificates/root-ca.pem \
+        --key=/opt/ca-certificates/root-ca-key.pem
+    - name: Create ca-issuer
+      shell: |
+        kubectl apply -n cert-manager -f - <<EOF
+        apiVersion: cert-manager.io/v1
+        kind: ClusterIssuer
+        metadata:
+          name: ca-issuer
+        spec:
+          ca:
+            secretName: root-ca
+        EOF
+
+
+
+# - name: Add host entry for local registry (optional)
+#  hosts: all_groups
+#  become: true
+#  vars:
+#    registry_hostname: registry.localdev.me
+#    registry_ip: "{{ hostvars['kubemaster'].my_ingress_ip }}"
+#  tasks:
+#    - name: Print message
+#      ansible.builtin.debug:
+#        msg: Add host entry - {{ hostvars['kubemaster'].my_ingress_ip }} {{ registry_hostname }}
+#    - name: Check if host entry exists
+#      shell: grep -c "{{ registry_ip }}\s\+\{{ registry_hostname }}" /etc/hosts
+#      register: registry_output
+#      failed_when: registry_output.rc == 2 # grep returns error code 2 for exceptions
+#      changed_when: false # so that the task won't be reported as "changed" every single time
+#    - name: Add entry
+#      when: registry_output.stdout == '0'
+#      shell: echo "{{ registry_ip }}  {{ registry_hostname }}" | tee -a /etc/hosts
