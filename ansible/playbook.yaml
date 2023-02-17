@@ -200,7 +200,7 @@
       shell: "{{ hostvars['kubemaster'].join_command }} >> node_joined.txt"
       args:
         chdir: $HOME
-        creates: node_joined.txt
+        creates: node_joined.txt # Runs task only once since file is created once
 
 - name: Install MetalLB
   hosts: kubemaster
@@ -293,8 +293,12 @@
         kubectl create secret tls -n cert-manager root-ca \
         --cert=/opt/ca-certificates/root-ca.pem \
         --key=/opt/ca-certificates/root-ca-key.pem
-    - name: Create ca-issuer
+      failed_when: false
+    - name: Wait for Cert Manager to be available and then create ca-issuer
       shell: |
+        kubectl wait deployment -n cert-manager cert-manager --for condition=Available=True --timeout=90s
+        kubectl wait deployment -n cert-manager cert-manager-cainjector --for condition=Available=True --timeout=90s
+        kubectl wait deployment -n cert-manager cert-manager-webhook --for condition=Available=True --timeout=90s
         kubectl apply -n cert-manager -f - <<EOF
         apiVersion: cert-manager.io/v1
         kind: ClusterIssuer
@@ -304,24 +308,3 @@
           ca:
             secretName: root-ca
         EOF
-
-
-
-# - name: Add host entry for local registry (optional)
-#  hosts: all_groups
-#  become: true
-#  vars:
-#    registry_hostname: registry.localdev.me
-#    registry_ip: "{{ hostvars['kubemaster'].my_ingress_ip }}"
-#  tasks:
-#    - name: Print message
-#      ansible.builtin.debug:
-#        msg: Add host entry - {{ hostvars['kubemaster'].my_ingress_ip }} {{ registry_hostname }}
-#    - name: Check if host entry exists
-#      shell: grep -c "{{ registry_ip }}\s\+\{{ registry_hostname }}" /etc/hosts
-#      register: registry_output
-#      failed_when: registry_output.rc == 2 # grep returns error code 2 for exceptions
-#      changed_when: false # so that the task won't be reported as "changed" every single time
-#    - name: Add entry
-#      when: registry_output.stdout == '0'
-#      shell: echo "{{ registry_ip }}  {{ registry_hostname }}" | tee -a /etc/hosts
