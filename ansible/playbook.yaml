@@ -154,12 +154,12 @@
 
     - name: Set join command
       set_fact:
-        join_command: '{{ join_command_raw.stdout_lines[0] }}'
+        join_command: "{{ join_command_raw.stdout_lines[0] }}"
       when: kubeadm_status.stdout == "0"
 
     - name: Create /home/vagrant/.kube Directory
       file:
-        path: '/home/vagrant/.kube'
+        path: "/home/vagrant/.kube"
         state: directory
       become_user: vagrant
 
@@ -189,7 +189,7 @@
 
     - name: set join command
       set_fact:
-        join_command: '{{ join_command_raw.stdout_lines[0] }}'
+        join_command: "{{ join_command_raw.stdout_lines[0] }}"
       become_user: vagrant
 
 - name: Add Workers to Cluster
@@ -220,7 +220,7 @@
         src: metallb/.
         remote_src: no
         dest: /home/vagrant/metallb/
-    - name: Wait for MetalLB to be available, then install MetalLB IP Address Pool and L2 Advertisement Manifests 
+    - name: Wait for MetalLB to be available, then install MetalLB IP Address Pool and L2 Advertisement Manifests
       shell: |
         kubectl wait deployment -n metallb-system controller --for condition=Available=True --timeout=90s
         kubectl apply -f ./metallb/
@@ -242,14 +242,11 @@
 
     - name: Set ingress_ip
       set_fact:
-        my_ingress_ip: '{{ ingress_ip.stdout_lines[0] }}'
+        my_ingress_ip: "{{ ingress_ip.stdout_lines[0] }}"
 
 - name: Install Dnsmasq
   hosts: all_groups
   become: true
-  vars:
-    registry_hostname: localdev.me
-    registry_ip: "{{ hostvars['kubemaster'].my_ingress_ip }}"
   tasks:
     - name: Print message
       apt:
@@ -261,30 +258,37 @@
         src: dnsmasq/dnsmasq.conf
         remote_src: no
         dest: /etc/dnsmasq.conf
-    - name: Create kubeadm.k8s.conf
-      copy:
-        dest: /etc/dnsmasq.d/kubeadm.k8s.conf
-        content: |
-          address=/{{ registry_hostname }}/{{ registry_ip }}
     - name: Enable dnsmasq
       ansible.builtin.systemd:
         name: dnsmasq
         enabled: yes
         masked: no
         state: started
+    
+- name: Add Dnsmasq host entries
+  hosts: all_groups
+  become: true
+  vars:
+    my_ingress_domain: localdev.me
+    my_ingress_ip: "{{ hostvars['kubemaster'].my_ingress_ip }}"
+  tasks:
+    - name: Create kubeadm.k8s.conf
+      copy:
+        dest: /etc/dnsmasq.d/kubeadm.k8s.conf
+        content: |
+          address=/{{ my_ingress_domain }}/{{ my_ingress_ip }}
 
+- name: Install Cert Manager
+  hosts: kubemaster
+  become: true
+  become_user: vagrant
+  tasks:
     - name: Copy root certificates
       copy:
         src: certs/.
         remote_src: no
         dest: /opt/ca-certificates/
         mode: 0444
-
-- name: Install Cert Manager
-  hosts: kubemaster
-  become: true 
-  become_user: vagrant
-  tasks:  
     - name: Install Cert Manager  via YAML Manifests
       shell: |
         kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.yaml
