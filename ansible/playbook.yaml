@@ -239,16 +239,15 @@
         ingress-nginx-controller \  
         --output jsonpath='{.status.loadBalancer.ingress[0].ip}'
       register: ingress_ip
-
     - name: Set ingress_ip
       set_fact:
         my_ingress_ip: "{{ ingress_ip.stdout_lines[0] }}"
 
 - name: Install Dnsmasq
-  hosts: all_groups
+  hosts: kubemaster
   become: true
   tasks:
-    - name: Print message
+    - name: Install Dnsmasq
       apt:
         update_cache: yes
         pkg:
@@ -264,9 +263,9 @@
         enabled: yes
         masked: no
         state: started
-    
+
 - name: Add Dnsmasq host entries
-  hosts: all_groups
+  hosts: kubemaster
   become: true
   vars:
     my_ingress_domain: localdev.me
@@ -277,6 +276,30 @@
         dest: /etc/dnsmasq.d/kubeadm.k8s.conf
         content: |
           address=/{{ my_ingress_domain }}/{{ my_ingress_ip }}
+    - name: Restart dnsmasq
+      ansible.builtin.systemd:
+        name: dnsmasq
+        state: restarted
+
+- name: Update /etc/resolv.conf
+  hosts: kubemaster
+  become: true
+  tasks:
+    - name: Check if /etc/resolv.conf entry is already defined
+      ansible.builtin.replace:
+        path: "/etc/resolv.conf"
+        regexp: "(^nameserver\\s)(.*)$"
+        replace: "nameserver 127.0.0.1"  
+
+- name: Update /etc/resolv.conf - workers
+  hosts: workers
+  become: true
+  tasks:
+    - name: Check if /etc/resolv.conf entry is already defined
+      ansible.builtin.replace:
+        path: "/etc/resolv.conf"
+        regexp: "(^nameserver\\s)(.*)$"
+        replace: "nameserver {{ hostvars['kubemaster']['ansible_enp0s8'].ipv4.address }}"  
 
 - name: Install Cert Manager
   hosts: kubemaster
@@ -284,6 +307,7 @@
   become_user: vagrant
   tasks:
     - name: Copy root certificates
+      become_user: root
       copy:
         src: certs/.
         remote_src: no
