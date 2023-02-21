@@ -16,7 +16,7 @@ NODE_IP_START = 2
 # you're doing.
 Vagrant.configure("2") do |config|
 
-  config.vm.boot_timeout = 600
+  config.vm.boot_timeout = 1200
   # The most common configuration options are documented and commented below.
   # For a complete reference, please see the online documentation at
   # https://docs.vagrantup.com.
