@@ -7,9 +7,6 @@
     - name: Print message
       ansible.builtin.debug:
         msg: Installing Kubernetes...
-    - name: Update apt
-      apt:
-        update_cache: yes
     - name: Forwarding IPv4 and letting iptables see bridged traffic
       shell:
         cmd: |
@@ -99,17 +96,22 @@
           - apt-transport-https
           - ca-certificates
           - curl
-    - name: Create /etc/apt/keyrings/ Directory
-      file:
-        path: /etc/apt/keyrings/
-        state: directory
-    - name: Download apt-key.gpg
-      get_url:
+    - name: Add kubeadm apt repository key
+      ansible.builtin.get_url:
         url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-        dest: /etc/apt/keyrings/kubernetes-archive-keyring.gpg
-    - name: Update APT sources list
-      shell:
-        cmd: echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+        dest: /etc/apt/trusted.gpg.d/kubeadm.asc
+        mode: '0644'
+        force: true
+    # - name: Create /etc/apt/keyrings/ Directory  ## Deprecated. Add repository key via /etc/apt/trusted.gpg.d instead
+    #   file:
+    #     path: /etc/apt/keyrings/
+    #     state: directory
+    # - name: Download the Google Cloud public signing key
+    #   shell:
+    #     cmd: curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-archive-keyring.gpg
+    # - name: Update APT sources list
+    #   shell:
+    #     cmd: echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
     - name: Update apt and install kubelet, kubeadm, kubectl
       apt:
         update_cache: yes
@@ -142,7 +144,10 @@
       changed_when: false # so that the task won't be reported as "changed" every single time
 
     - name: Reset Cluster if initialized but not configured in kubectl
-      shell: kubeadm reset -f # force reset misconfigured cluster
+      shell: |
+        kubeadm reset -f # force reset misconfigured cluster
+        rm -rfv /etc/cni/net.d
+        iptables --flush
       when: kubeadm_status.stdout == "0"
       failed_when: false
       changed_when: false
@@ -228,7 +233,7 @@
         dest: /home/vagrant/metallb/
     - name: Wait for MetalLB to be available, then install MetalLB IP Address Pool and L2 Advertisement Manifests
       shell: |
-        kubectl wait deployment -n metallb-system controller --for condition=Available=True --timeout=90s
+        kubectl wait deployment -n metallb-system controller --for condition=Available=True --timeout=120s
         kubectl apply -f ./metallb/
 
 - name: Install Nginx Ingress
@@ -330,9 +335,9 @@
       failed_when: false
     - name: Wait for Cert Manager to be available and then create ca-issuer
       shell: |
-        kubectl wait deployment -n cert-manager cert-manager --for condition=Available=True --timeout=90s
-        kubectl wait deployment -n cert-manager cert-manager-cainjector --for condition=Available=True --timeout=90s
-        kubectl wait deployment -n cert-manager cert-manager-webhook --for condition=Available=True --timeout=90s
+        kubectl wait deployment -n cert-manager cert-manager --for condition=Available=True --timeout=120s
+        kubectl wait deployment -n cert-manager cert-manager-cainjector --for condition=Available=True --timeout=120s
+        kubectl wait deployment -n cert-manager cert-manager-webhook --for condition=Available=True --timeout=120s
         kubectl apply -n cert-manager -f - <<EOF
         apiVersion: cert-manager.io/v1
         kind: ClusterIssuer
