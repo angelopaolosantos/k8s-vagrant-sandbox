@@ -103,13 +103,19 @@
       file:
         path: /etc/apt/keyrings/
         state: directory
-    - name: Download apt-key.gpg
-      get_url:
-        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-        dest: /etc/apt/keyrings/kubernetes-archive-keyring.gpg
+    
+    - name: Download the Google Cloud public signing key
+      shell:
+        cmd: curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-archive-keyring.gpg
+      args: 
+        creates: /etc/apt/keyrings/kubernetes-archive-keyring.gpg
+
     - name: Update APT sources list
       shell:
         cmd: echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+      args: 
+        creates: /etc/apt/sources.list.d/kubernetes.list
+
     - name: Update apt and install kubelet, kubeadm, kubectl
       apt:
         update_cache: yes
@@ -203,13 +209,13 @@
   become: true
   tasks:
     - name: join cluster
-      shell: "{{ hostvars['kubemaster'].join_command }} >> node_joined.txt"
+      shell: "{{ hostvars['kubemaster01'].join_command }} >> node_joined.txt"
       args:
         chdir: $HOME
         creates: node_joined.txt # Runs task only once since file is created once
 
 - name: Install MetalLB
-  hosts: kubemaster
+  hosts: controlplanes
   become: true
   become_user: vagrant
   tasks:
@@ -232,7 +238,7 @@
         kubectl apply -f ./metallb/
 
 - name: Install Nginx Ingress
-  hosts: kubemaster
+  hosts: controlplanes
   become: true
   become_user: vagrant
   tasks:
@@ -250,7 +256,7 @@
         my_ingress_ip: "{{ ingress_ip.stdout_lines[0] }}"
 
 - name: Install Dnsmasq
-  hosts: kubemaster
+  hosts: controlplanes
   become: true
   tasks:
     - name: Install Dnsmasq
@@ -271,7 +277,7 @@
         state: started
 
 - name: Add Dnsmasq host entries
-  hosts: kubemaster
+  hosts: controlplanes
   become: true
   vars:
     my_ingress_domain: localdev.me
@@ -288,7 +294,7 @@
         state: restarted
 
 - name: Update /etc/resolv.conf
-  hosts: kubemaster
+  hosts: controlplanes
   become: true
   tasks:
     - name: Check if /etc/resolv.conf entry is already defined
@@ -305,10 +311,10 @@
       ansible.builtin.replace:
         path: "/etc/resolv.conf"
         regexp: "(^nameserver\\s)(.*)$"
-        replace: "nameserver {{ hostvars['kubemaster']['ansible_enp0s8'].ipv4.address }}"  
+        replace: "nameserver {{ hostvars['kubemaster01']['ansible_enp0s8'].ipv4.address }}"  
 
 - name: Install Cert Manager
-  hosts: kubemaster
+  hosts: controlplanes
   become: true
   become_user: vagrant
   tasks:

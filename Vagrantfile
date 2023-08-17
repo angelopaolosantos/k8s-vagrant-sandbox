@@ -4,7 +4,7 @@
 # Define the number of master and worker nodes
 # If this number is changed, remember to update setup-hosts.sh script with the new hosts IP details in /etc/hosts of each VM.
 NUM_MASTER_NODE = 1
-NUM_WORKER_NODE = 2
+NUM_WORKER_NODE = 1
 
 IP_NW = "192.168.56."
 MASTER_IP_START = 1
@@ -63,15 +63,16 @@ Vagrant.configure("2") do |config|
 
   # Provision Master Nodes
   (1..NUM_MASTER_NODE).each do |i|
-      config.vm.define "kubemaster" do |node|
+      master_num = format('%02d', i)
+      config.vm.define "kubemaster#{master_num}" do |node|
         # Name shown in the GUI
         node.vm.provider "virtualbox" do |vb|
-            vb.name = "kubemaster"
+            vb.name = "kubemaster#{master_num}"
             vb.memory = 2048
             vb.cpus = 2
         end
           # set hostname
-        node.vm.hostname = "kubemaster"
+        node.vm.hostname = "kubemaster#{master_num}"
 
         # set network ip
         node.vm.network :private_network, ip: IP_NW + "#{MASTER_IP_START + i}"
@@ -92,14 +93,15 @@ Vagrant.configure("2") do |config|
 
   # Provision Worker Nodes
   (1..NUM_WORKER_NODE).each do |i|
-    config.vm.define "kubenode0#{i}" do |node|
+    worker_num = format('%02d', i)
+    config.vm.define "kubenode#{worker_num}" do |node|
       node.vm.provider "virtualbox" do |vb|
-          vb.name = "kubenode0#{i}"
+          vb.name = "kubenode#{worker_num}"
           vb.memory = 2048
           vb.cpus = 2
       end
       # set hostname
-      node.vm.hostname = "kubenode0#{i}"
+      node.vm.hostname = "kubenode#{worker_num}"
 
       # set network ip
       node.vm.network :private_network, ip: IP_NW + "#{NODE_IP_START + i}"
@@ -120,8 +122,8 @@ Vagrant.configure("2") do |config|
           ansible.limit = "all"
           ansible.verbose = "v"
           ansible.groups = {
-            "controlplanes" => ["kubemaster"],
-            "workers" => ["kubenode0[1:2]"],
+            "controlplanes" => ["kubemaster0[1:#{NUM_MASTER_NODE}]"],
+            "workers" => ["kubenode0[1:#{NUM_WORKER_NODE}]"],
             "all_groups:children" => ["controlplanes", "workers" ]
           }
         end
