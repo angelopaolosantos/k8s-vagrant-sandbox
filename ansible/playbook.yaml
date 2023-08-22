@@ -136,7 +136,7 @@
         selection: hold
 
 - name: Create Cluster using Kubeadm
-  hosts: controlplanes
+  hosts: kubemaster01
   become: true
   tasks:
     - name: Check if cluster is initialized
@@ -177,13 +177,19 @@
         state: directory
       become_user: vagrant
 
-    - name: Copy /etc/kubernetes/admin.conf to /home/vagrant/.kube/config
+    - name: Copy /etc/kubernetes/admin.conf to local folder
       copy:
         src: /etc/kubernetes/admin.conf
         remote_src: yes
         dest:
           /home/vagrant/.kube/config
           # force: no
+
+    - name: Download admin.conf
+      ansible.builtin.fetch:
+        src: /etc/kubernetes/admin.conf
+        dest: .kube/{{ inventory_hostname }}/
+        flat: yes
 
     - name: Set /home/vagrant/.kube Directory Owner and Group to vagrant
       shell:
@@ -216,8 +222,26 @@
         chdir: $HOME
         creates: node_joined.txt # Runs task only once since file is created once
 
+- name: Fix Nodes NotReady Status
+  hosts: all
+  become: true
+  tasks:
+    - name: systemctl daemon-reload
+      ansible.builtin.systemd:
+        daemon_reload: yes
+    - name: Restart kubelet service
+      ansible.builtin.systemd:
+        name: kubelet
+        state: restarted
+    - name: Restart containerd service
+      ansible.builtin.systemd:
+        name: containerd
+        state: restarted
+  tags:
+    - restart_services
+
 - name: Install MetalLB
-  hosts: controlplanes
+  hosts: kubemaster01
   become: true
   become_user: vagrant
   tasks:
@@ -240,7 +264,7 @@
         kubectl apply -f ./metallb/
 
 - name: Install Nginx Ingress
-  hosts: controlplanes
+  hosts: kubemaster01
   become: true
   become_user: vagrant
   tasks:
@@ -316,7 +340,7 @@
         replace: "nameserver {{ hostvars['kubemaster01']['ansible_enp0s8'].ipv4.address }}"  
 
 - name: Install Cert Manager
-  hosts: controlplanes
+  hosts: kubemaster01
   become: true
   become_user: vagrant
   tasks:
