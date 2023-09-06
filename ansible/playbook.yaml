@@ -135,6 +135,36 @@
         name: kubectl
         selection: hold
 
+- name: Install helm, and upload certificates
+  hosts: kubemaster01
+  become: true
+  tasks:
+    - name: Install helm if not exists
+      unarchive:
+        src: https://get.helm.sh/helm-v3.11.0-linux-amd64.tar.gz
+        dest: /usr/local/bin
+        extra_opts: "--strip-components=1"
+        owner: root
+        group: root
+        mode: 0755
+        remote_src: true
+      args:
+        creates: /usr/local/bin/helm
+    - name: Copy cert-manager root certificates
+      become_user: root
+      copy:
+        src: certs/.
+        remote_src: no
+        dest: /opt/ca-certificates/
+        mode: 0444
+    - name: Copy keycloak root certificates
+      become_user: root
+      copy:
+        src: certs/.
+        remote_src: no
+        dest: /opt/keycloak-ca/
+        mode: 0444
+
 - name: Create Cluster using Kubeadm
   hosts: kubemaster01
   become: true
@@ -155,8 +185,41 @@
       failed_when: false
       changed_when: false
 
+    - name: Copy cluster config into /etc/kubernetes
+      copy:
+        dest: "/etc/kubernetes/vagrant-cluster-config.yaml"
+        content: |
+          apiVersion: kubeadm.k8s.io/v1beta3
+          kind: InitConfiguration
+          localAPIEndpoint:
+            advertiseAddress: 192.168.56.2
+            bindPort: 6443
+          ---
+          apiVersion: kubeadm.k8s.io/v1beta3
+          kind: ClusterConfiguration
+          networking:
+            serviceSubnet: "10.100.0.0/16"
+            podSubnet: "10.244.0.0/16"
+          apiServer:
+            extraArgs:
+              oidc-client-id: kube
+              oidc-issuer-url: "https://keycloak.localdev.me"
+              oidc-username-claim: email
+              oidc-groups-claim: groups
+              oidc-ca-file: "/opt/keycloak-ca/root-ca.pem"
+            extraVolumes:
+            - name: "keycloak-ca"
+              hostPath: "/opt/keycloak-ca/"
+              mountPath: "/opt/keycloak-ca/"
+              readOnly: true
+              pathType: DirectoryOrCreate
+          
+    # - name: Initialize Cluster
+    #   shell: kubeadm init --pod-network-cidr 10.244.0.0/16 --apiserver-advertise-address=192.168.56.2
+    #   when: kubeadm_status.stdout == "0"
+
     - name: Initialize Cluster
-      shell: kubeadm init --pod-network-cidr 10.244.0.0/16 --apiserver-advertise-address=192.168.56.2
+      shell: kubeadm init --config /etc/kubernetes/vagrant-cluster-config.yaml
       when: kubeadm_status.stdout == "0"
 
     - debug: var=kubeadm_status.stdout_lines
@@ -344,13 +407,6 @@
   become: true
   become_user: vagrant
   tasks:
-    - name: Copy root certificates
-      become_user: root
-      copy:
-        src: certs/.
-        remote_src: no
-        dest: /opt/ca-certificates/
-        mode: 0444
     - name: Install Cert Manager  via YAML Manifests
       shell: |
         kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.yaml
