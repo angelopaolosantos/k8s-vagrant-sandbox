@@ -11,6 +11,25 @@ KEYCLOAK_PROXY to edge
 update keycloak configmap
 
 
+Patch the configmap to add ENV KC_PROXY
+# Get the configmap deployed for keycloak
+$ kubectl get configmap -n <namespace>                        
+NAME                DATA   AGE
+keycloak-env-vars   15     xx
+
+# Ensure you are doing it in the namespace where keycloak is deployed
+kubectl patch configmap keycloak-env-vars -n <namespace> --type merge --patch '{"data":{"KC_PROXY":"edge"}}'
+
+# Get the pod using configmap and restart the same
+$ kubectl get pods -n <namespace>
+NAME                    READY   STATUS    RESTARTS   AGE
+keycloak-0              1/1     Running   0          xx
+keycloak-postgresql-0   1/1     Running   0          xx
+
+$ kubectl delete pod keycloak-0 -n <namespace>
+
+
+
 Install krew
 kubectl krew install oidc-login
 
