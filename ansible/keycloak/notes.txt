@@ -1,0 +1,25 @@
+https://stackoverflow.com/questions/73883728/keycloak-admin-console-loading-indefinitely
+
+https://medium.com/@charled.breteche/kind-keycloak-securing-kubernetes-api-server-with-oidc-371c5faef902
+
+https://github.com/int128/kubelogin/issues/29
+
+https://andrewtarry.com/posts/custom-dns-in-kubernetes/
+
+KEYCLOAK_PROXY to edge
+
+update keycloak configmap
+
+
+Install krew
+kubectl krew install oidc-login
+
+kubectl oidc-login setup \
+--oidc-issuer-url=https://keycloak.localdev.me/realms/master \
+--oidc-client-id=kube \
+--oidc-client-secret=e0217XKdOK1qZnwoz29XgwpVL6iLvSya \
+--insecure-skip-tls-verify
+
+
+rm -rf ~/.kube/cache
+rm -rf ~/.kube/http-cache

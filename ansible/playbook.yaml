@@ -430,3 +430,74 @@
           ca:
             secretName: root-ca
         EOF
+
+
+# - name: Install Keycloak
+#   hosts: kubemaster01
+#   become: true
+#   become_user: vagrant
+#   tasks:
+#     - name: Install Cert Manager  via YAML Manifests
+#       shell: |
+#         helm upgrade --install \
+#           --namespace keycloak --create-namespace \
+#           --repo https://charts.bitnami.com/bitnami keycloak keycloak \
+#           --reuse-values --values - <<EOF
+#         auth:
+#           createAdminUser: true
+#           adminUser: admin
+#           adminPassword: admin
+#           managementUser: manager
+#           managementPassword: manager
+#         proxyAddressForwarding: true
+#         ingress:
+#           class: nginx
+#           enabled: true
+#           hostname: keycloak.localdev.me
+#           tls: true
+#           extraTls:
+#           - hosts:
+#             - keycloak.localdev.me
+#             secretName: keycloak.cluster-tls
+#         postgresql:
+#           enabled: true
+#           postgresqlPassword: password
+#         EOF
+
+- name: Install Keycloak
+  hosts: kubemaster01
+  become: true
+  become_user: vagrant
+  tasks:
+    - name: Install Keycloak via helm
+      kubernetes.core.helm:
+        name: keycloak
+        repo_url: "https://charts.bitnami.com/bitnami"
+        chart_ref: bitnami/keycloak
+        release_namespace: keycloak
+        create_namespace: true
+        force: True
+        wait: True
+        replace: True
+        update_repo_cache: True
+        disable_hook: True
+        values:
+          auth:
+            createAdminUser: true
+            adminUser: admin
+            adminPassword: admin
+            managementUser: manager
+            managementPassword: manager
+          proxyAddressForwarding: true
+          ingress:
+            class: nginx
+            enabled: true
+            hostname: keycloak.localdev.me
+            tls: true
+            extraTls:
+            - hosts:
+              - keycloak.localdev.me
+              secretName: keycloak.cluster-tls
+          postgresql:
+            enabled: true
+            postgresqlPassword: password
