@@ -1,0 +1,37 @@
+---
+# file: roles/controlplane/tasks/main.yml
+
+- name: Get ingress ip
+  become_user: vagrant
+  shell: |
+    kubectl get services --namespace ingress-nginx \
+    ingress-nginx-controller \  
+    --output jsonpath='{.status.loadBalancer.ingress[0].ip}'
+  register: ingress_ip
+
+- name: Install Dnsmasq
+  apt:
+    update_cache: yes
+    pkg:
+      - dnsmasq
+- name: Copy dnsmasq.conf
+  copy:
+    src: "{{ role_path }}/files/dnsmasq/dnsmasq.conf"
+    remote_src: no
+    dest: /etc/dnsmasq.conf
+- name: Enable dnsmasq
+  ansible.builtin.systemd:
+    name: dnsmasq
+    enabled: yes
+    masked: no
+    state: started
+
+- name: Create kubeadm.k8s.conf
+  copy:
+    dest: /etc/dnsmasq.d/kubeadm.k8s.conf
+    content: |
+      address=/{{ ingress_domain }}/{{ ingress_ip.stdout_lines[0] }}
+- name: Restart dnsmasq
+  ansible.builtin.systemd:
+    name: dnsmasq
+    state: restarted

@@ -1,0 +1,6 @@
+---
+# file: roles/controlplane/tasks/main.yml
+
+- name: Install Nginx Ingress via YAML Manifests
+  shell: |
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.5.1/deploy/static/provider/cloud/deploy.yaml

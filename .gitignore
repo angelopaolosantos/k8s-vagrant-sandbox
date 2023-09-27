@@ -2,3 +2,4 @@
 *.log
 ansible/certs/*.pem
 ansible/.kube/*/*.conf
+*.pem

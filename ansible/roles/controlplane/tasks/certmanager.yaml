@@ -1,0 +1,35 @@
+---
+# file: roles/controlplane/tasks/main.yml
+
+- name: Copy cert-manager root certificates
+  become_user: root
+  copy:
+    src: "{{ role_path }}/files/certs/"
+    remote_src: no
+    dest: /opt/ca-certificates/
+    mode: 0444
+
+- name: Install Cert Manager  via YAML Manifests
+  shell: |
+    kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.yaml
+
+- name: Create Cert Manager tls secret
+  shell: |
+    kubectl create secret tls -n cert-manager root-ca \
+    --cert=/opt/ca-certificates/root-ca.pem \
+    --key=/opt/ca-certificates/root-ca-key.pem
+  failed_when: false
+- name: Wait for Cert Manager to be available and then create ca-issuer
+  shell: |
+    kubectl wait deployment -n cert-manager cert-manager --for condition=Available=True --timeout=120s
+    kubectl wait deployment -n cert-manager cert-manager-cainjector --for condition=Available=True --timeout=120s
+    kubectl wait deployment -n cert-manager cert-manager-webhook --for condition=Available=True --timeout=120s
+    kubectl apply -n cert-manager -f - <<EOF
+    apiVersion: cert-manager.io/v1
+    kind: ClusterIssuer
+    metadata:
+      name: ca-issuer
+    spec:
+      ca:
+        secretName: root-ca
+    EOF

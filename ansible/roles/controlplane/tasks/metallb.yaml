@@ -1,0 +1,22 @@
+---
+# file: roles/controlplane/tasks/main.yml
+
+
+
+- name: Set strictARP to True in kube-proxy configmap
+  shell: |
+    kubectl get configmap kube-proxy -n kube-system -o yaml | \
+    sed -e "s/strictARP: false/strictARP: true/" | \
+    kubectl apply -f - -n kube-system
+- name: Install MetalLB via YAML Manifests
+  shell: |
+    kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.7/config/manifests/metallb-native.yaml
+- name: Copy metallb manifests to kubemaster node
+  copy:
+    src: "{{ role_path }}/files/metallb/"
+    remote_src: no
+    dest: /home/vagrant/metallb/
+- name: Wait for MetalLB to be available, then install MetalLB IP Address Pool and L2 Advertisement Manifests
+  shell: |
+    kubectl wait deployment -n metallb-system controller --for condition=Available=True --timeout=120s
+    kubectl apply -f ./metallb/

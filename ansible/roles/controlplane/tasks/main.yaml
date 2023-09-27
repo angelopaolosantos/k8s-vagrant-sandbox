@@ -1,0 +1,29 @@
+---
+# file: roles/common/tasks/main.yml
+- name: Install helm
+  become: true
+  import_tasks: helm.yaml
+
+- name: Install metallb
+  become: true
+  become_user: vagrant
+  import_tasks: metallb.yaml
+
+- name: Install ingress
+  become: true
+  become_user: vagrant
+  import_tasks: ingress.yaml
+
+- name: Install cert-manager
+  become: true
+  become_user: vagrant
+  import_tasks: certmanager.yaml
+
+- name: Install dnsmasq
+  become: true
+  import_tasks: dnsmasq.yaml  
+
+- name: Install keycloak
+  become: true
+  become_user: vagrant
+  import_tasks: keycloak.yaml  

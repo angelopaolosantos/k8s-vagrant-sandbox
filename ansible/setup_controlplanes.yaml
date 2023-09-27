@@ -1,0 +1,5 @@
+---
+# file: controlplanes.yaml
+- hosts: kubemaster01
+  roles:
+    - controlplane

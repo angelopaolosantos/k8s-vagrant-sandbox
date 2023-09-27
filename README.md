@@ -32,3 +32,6 @@ export PATH="$PATH:/mnt/d/Program Files/Oracle/VirtualBox"
 4. On WSL, run `vagrant plugin install virtualbox_WSL2`
 
 5. Run Vagrant, while on repository root folder type `vagrant up`
+
+
+ansible-playbook -i .vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory ansible/controlplanes.yaml

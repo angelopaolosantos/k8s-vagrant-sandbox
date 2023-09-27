@@ -1,0 +1,4 @@
+---
+# file: site.yaml
+- import_playbook: setup_nodes.yaml
+- import_playbook: setup_controlplanes.yaml

@@ -1,0 +1,47 @@
+---
+# file: roles/controlplane/tasks/main.yml
+
+- name: Copy keycloak manifests to kubemaster node
+  copy:
+    src: "{{ role_path }}/files/keycloak/"
+    remote_src: no
+    dest: /home/vagrant/keycloak/
+
+- name: Apply keycloak manifests
+  shell: |
+    kubectl apply -f ./keycloak/
+
+- name: Add helm repository
+  kubernetes.core.helm_repository:
+    name: bitnami
+    repo_url: https://charts.bitnami.com/bitnami
+
+- name: Install Keycloak via helm
+  kubernetes.core.helm:
+    name: keycloak
+    chart_ref: bitnami/keycloak
+    release_namespace: keycloak
+    create_namespace: true
+    values:
+      global:
+        storageClass: local-storage
+      auth:
+        createAdminUser: true
+        adminUser: admin
+        adminPassword: admin
+        managementUser: manager
+        managementPassword: manager
+      proxyAddressForwarding: true
+      ingress:
+        ingressClassName: nginx
+        enabled: true
+        hostname: "{{ keycloak_domain }}"
+        tls: true
+        extraTls:
+          - hosts:
+              - "{{ keycloak_domain }}"
+            secretName: keycloak.cluster-tls
+      postgresql:
+        enabled: true
+        postgresqlPassword: password
+      

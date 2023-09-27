@@ -118,7 +118,7 @@ Vagrant.configure("2") do |config|
       # Provision Ansible on the last node defined. Ansible will run in parallel since the other nodes are already provisioned. 
       if i == NUM_WORKER_NODE
         node.vm.provision "ansible" do |ansible|
-          ansible.playbook = "ansible/playbook.yaml"
+          ansible.playbook = "ansible/site.yaml"
           ansible.limit = "all"
           ansible.verbose = "v"
           ansible.groups = {
