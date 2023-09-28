@@ -1,3 +1,0 @@
-Vagrant automatically generates inventory here:
-
-.vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory

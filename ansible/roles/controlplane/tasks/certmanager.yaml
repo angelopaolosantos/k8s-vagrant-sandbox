@@ -1,5 +1,5 @@
 ---
-# file: roles/controlplane/tasks/main.yml
+# file: roles/controlplane/tasks/certmanager.yml
 
 - name: Copy cert-manager root certificates
   become_user: root
@@ -19,6 +19,7 @@
     --cert=/opt/ca-certificates/root-ca.pem \
     --key=/opt/ca-certificates/root-ca-key.pem
   failed_when: false
+
 - name: Wait for Cert Manager to be available and then create ca-issuer
   shell: |
     kubectl wait deployment -n cert-manager cert-manager --for condition=Available=True --timeout=120s

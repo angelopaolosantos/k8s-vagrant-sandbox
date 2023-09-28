@@ -1,4 +1,5 @@
 # roles/example/tasks/main.yml
+
 - name: Install Kubernetes requirements
   import_tasks: prerequisites.yaml
   become: true

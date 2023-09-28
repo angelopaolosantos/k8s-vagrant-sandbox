@@ -1,5 +1,6 @@
 ---
-# file: roles/controlplane/tasks/main.yml
+# file: roles/controlplane/tasks/helm.yaml
+
 - name: Install helm if not exists
   unarchive:
     src: https://get.helm.sh/helm-v3.11.0-linux-amd64.tar.gz

@@ -1,5 +1,5 @@
----
-# file: roles/common/tasks/main.yml
+# ---
+# file: roles/common/tasks/main.yaml
 - name: Install helm
   become: true
   import_tasks: helm.yaml
@@ -25,5 +25,4 @@
 
 - name: Install keycloak
   become: true
-  become_user: vagrant
-  import_tasks: keycloak.yaml  
+  import_tasks: keycloak.yaml

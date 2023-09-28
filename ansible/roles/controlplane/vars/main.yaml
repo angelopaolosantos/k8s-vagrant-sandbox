@@ -1,2 +1,5 @@
+---
+# Change domain values here for your local cluster
+
 ingress_domain: localdev.me
 keycloak_domain: keycloak.localdev.me

@@ -7,72 +7,75 @@ resources:
 patches:
 - path: kube-apiserver-dev.yaml
 
-- target:
-    kind: Pod
-    name: kube-apiserver
-    namespace: kube-system
-  patch: |-
-    - op: add
-      path: /spec/containers/0/command/-
-      value: --oidc-client-id=kube
+# Below code will not work. Adding volumes by editing /etc/kubernetes/manifests/kube-apiserver.yaml doesn't seem to work.
+# Added volumes via kudeadm config instead.
+#
+# - target:
+#     kind: Pod
+#     name: kube-apiserver
+#     namespace: kube-system
+#   patch: |-
+#     - op: add
+#       path: /spec/containers/0/command/-
+#       value: --oidc-client-id=kube
 
-- target:
-    kind: Pod
-    name: kube-apiserver
-    namespace: kube-system
-  patch: |-
-    - op: add
-      path: /spec/containers/0/command/-
-      value: --oidc-issuer-url="https://keycloak.localdev.me"
+# - target:
+#     kind: Pod
+#     name: kube-apiserver
+#     namespace: kube-system
+#   patch: |-
+#     - op: add
+#       path: /spec/containers/0/command/-
+#       value: --oidc-issuer-url="https://keycloak.localdev.me"
 
-- target:
-    kind: Pod
-    name: kube-apiserver
-    namespace: kube-system
-  patch: |-
-    - op: add
-      path: /spec/containers/0/command/-
-      value: --oidc-username-claim=email
+# - target:
+#     kind: Pod
+#     name: kube-apiserver
+#     namespace: kube-system
+#   patch: |-
+#     - op: add
+#       path: /spec/containers/0/command/-
+#       value: --oidc-username-claim=email
 
-- target:
-    kind: Pod
-    name: kube-apiserver
-    namespace: kube-system
-  patch: |-
-    - op: add
-      path: /spec/containers/0/command/-
-      value: --oidc-groups-claim=groups
+# - target:
+#     kind: Pod
+#     name: kube-apiserver
+#     namespace: kube-system
+#   patch: |-
+#     - op: add
+#       path: /spec/containers/0/command/-
+#       value: --oidc-groups-claim=groups
 
-- target:
-    kind: Pod
-    name: kube-apiserver
-    namespace: kube-system
-  patch: |-
-    - op: add
-      path: /spec/containers/0/command/-
-      value: --oidc-ca-file="/opt/keycloak-ca/root-ca.pem"
+# - target:
+#     kind: Pod
+#     name: kube-apiserver
+#     namespace: kube-system
+#   patch: |-
+#     - op: add
+#       path: /spec/containers/0/command/-
+#       value: --oidc-ca-file="/opt/keycloak-ca/root-ca.pem"
 
-- target:
-    kind: Pod
-    name: kube-apiserver
-    namespace: kube-system
-  patch: |-
-    - op: add
-      path: /spec/containers/0/volumeMounts/-
-      value: 
-        mountPath: /opt/keycloak-ca/
-        name: keycloak-ca
-        readOnly: true
+# - target:
+#     kind: Pod
+#     name: kube-apiserver
+#     namespace: kube-system
+#   patch: |-
+#     - op: add
+#       path: /spec/containers/0/volumeMounts/-
+#       value: 
+#         mountPath: /opt/keycloak-ca/
+#         name: keycloak-ca
+#         readOnly: true
 
-- target:
-    kind: Pod
-    name: kube-apiserver
-    namespace: kube-system
-  patch: |-
-    - op: add
-      path: /spec/volumes/-
-      value:
-        hostPath:
-          path: /opt/keycloak-ca/
-          type: DirectoryOrCreate
-        name: keycloak-ca
+# - target:
+#     kind: Pod
+#     name: kube-apiserver
+#     namespace: kube-system
+#   patch: |-
+#     - op: add
+#       path: /spec/volumes/-
+#       value:
+#         hostPath:
+#           path: /opt/keycloak-ca/
+#           type: DirectoryOrCreate
+#         name: keycloak-ca

@@ -1,5 +1,5 @@
 ---
-# file: roles/controlplane/tasks/main.yml
+# file: roles/controlplane/tasks/dnsmasq.yml
 
 - name: Get ingress ip
   become_user: vagrant
@@ -14,11 +14,13 @@
     update_cache: yes
     pkg:
       - dnsmasq
+
 - name: Copy dnsmasq.conf
   copy:
     src: "{{ role_path }}/files/dnsmasq/dnsmasq.conf"
     remote_src: no
     dest: /etc/dnsmasq.conf
+
 - name: Enable dnsmasq
   ansible.builtin.systemd:
     name: dnsmasq
@@ -31,6 +33,7 @@
     dest: /etc/dnsmasq.d/kubeadm.k8s.conf
     content: |
       address=/{{ ingress_domain }}/{{ ingress_ip.stdout_lines[0] }}
+      
 - name: Restart dnsmasq
   ansible.builtin.systemd:
     name: dnsmasq

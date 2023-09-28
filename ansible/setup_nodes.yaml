@@ -1,5 +1,6 @@
 ---
-# file: controlplanes.yaml
+# file: setup_nodes.yaml
+
 - hosts: all
   roles:
     - common
@@ -7,6 +8,12 @@
 - hosts: kubemaster01
   become: true
   tasks:
+  - name: Copy CA to node
+    copy:
+      src: "roles/controlplane/files/certs/"
+      remote_src: no
+      dest: /opt/keycloak-ca/
+
   - name: Check if cluster is initialized
     shell: kubectl get cs | grep -c ok
     register: kubeadm_status
@@ -38,20 +45,19 @@
         networking:
           serviceSubnet: "10.100.0.0/16"
           podSubnet: "10.244.0.0/16"
-
-      # apiServer:
-      #   extraArgs:
-      #     oidc-client-id: kube
-      #     oidc-issuer-url: "https://keycloak.localdev.me"
-      #     oidc-username-claim: email
-      #     oidc-groups-claim: groups
-      #     oidc-ca-file: "/opt/keycloak-ca/root-ca.pem"
-      #   extraVolumes:
-      #   - name: "keycloak-ca"
-      #     hostPath: "/opt/keycloak-ca/"
-      #     mountPath: "/opt/keycloak-ca/"
-      #     readOnly: true
-      #     pathType: DirectoryOrCreate
+        apiServer:
+          extraArgs:
+            oidc-client-id: kube
+            oidc-issuer-url: "https://keycloak.localdev.me/realms/master"
+            oidc-username-claim: email
+            oidc-groups-claim: groups
+            oidc-ca-file: "/opt/keycloak-ca/root-ca.pem"
+          extraVolumes:
+          - name: "keycloak-ca"
+            hostPath: "/opt/keycloak-ca/"
+            mountPath: "/opt/keycloak-ca/"
+            readOnly: true
+            pathType: DirectoryOrCreate
 
   - name: Initialize Cluster
     shell: kubeadm init --config /opt/vagrant-cluster-config.yaml

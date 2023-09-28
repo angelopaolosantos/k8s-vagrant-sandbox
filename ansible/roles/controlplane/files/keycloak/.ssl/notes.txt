@@ -1,14 +1,3 @@
-# create a folder to store certificate files
-mkdir -p .ssl
-# generate an rsa key
-openssl genrsa -out .ssl/root-ca-key.pem 2048
-# generate root certificate
-openssl req -x509 -new -nodes -key .ssl/root-ca-key.pem \
-  -days 3650 -sha256 -out .ssl/root-ca.pem -subj "/CN=kube-ca"
-
-
-Keycloak instructions
-
 # create certificate configuration file
 cat <<EOF > .ssl/req.cnf
 [req]
@@ -20,21 +9,25 @@ basicConstraints = CA:FALSE
 keyUsage = nonRepudiation, digitalSignature, keyEncipherment
 subjectAltName = @alt_names
 [alt_names]
-DNS.1 = keycloak.kind.cluster
+DNS.1 = keycloak.cluster
 EOF
+
 # generate private key
 openssl genrsa -out .ssl/key.pem 2048
+
 # create certificate signing request
 openssl req -new -key .ssl/key.pem -out .ssl/csr.pem \
   -subj "/CN=kube-ca" \
-  -addext "subjectAltName = DNS:keycloak.kind.cluster" \
+  -addext "subjectAltName = DNS:keycloak.cluster" \
   -sha256 -config .ssl/req.cnf
+
 # create certificate
 openssl x509 -req -in .ssl/csr.pem \
   -CA .ssl/root-ca.pem -CAkey .ssl/root-ca-key.pem \
   -CAcreateserial -sha256 -out .ssl/cert.pem -days 3650 \
   -extensions v3_req -extfile .ssl/req.cnf
+
 # create secret used by keycloak ingress
-kubectl create secret tls -n keycloak keycloak.kind.cluster-tls \
+kubectl create secret tls -n keycloak keycloak.cluster-tls \
   --cert=.ssl/cert.pem \
   --key=.ssl/key.pem

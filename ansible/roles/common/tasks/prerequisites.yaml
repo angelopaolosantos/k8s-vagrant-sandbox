@@ -1,5 +1,6 @@
 ---
 # file: roles/common/tasks/prerequisites.yaml
+
 - name: Ping my hosts
   ansible.builtin.ping:
 
