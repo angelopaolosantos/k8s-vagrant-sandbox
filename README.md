@@ -33,5 +33,80 @@ export PATH="$PATH:/mnt/d/Program Files/Oracle/VirtualBox"
 
 5. Run Vagrant, while on repository root folder type `vagrant up`
 
+6. If ansible fails, type `vagrant up --provision` to run only ansible
 
-ansible-playbook -i .vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory ansible/controlplanes.yaml
+7. Type `vagrant destroy` to delete and clean up nodes
+
+## Ansible
+Ansible inventory is auto generated in the .vagrant folder
+```
+ansible-playbook -i .vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory {{ playbook }}
+```
+
+## Keycloak Troubleshooting
+Patch the configmap to add ENV KEYCLOAK_PROXY
+1. Get the configmap deployed for keycloak
+```
+$ kubectl get configmap -n <namespace>                        
+NAME                DATA   AGE
+keycloak-env-vars   15     xx
+```
+2. Ensure you are doing it in the namespace where keycloak is deployed
+```
+kubectl patch configmap keycloak-env-vars -n <namespace> --type merge --patch '{"data":{"KEYCLOAK_PROXY":"edge"}}'
+```
+
+3. Get the pod using configmap and restart. You can delete the pod or scale the stateful set
+```
+$ kubectl get pods -n <namespace>
+NAME                    READY   STATUS    RESTARTS   AGE
+keycloak-0              1/1     Running   0          xx
+keycloak-postgresql-0   1/1     Running   0          xx
+
+$ kubectl delete pod keycloak-0 -n <namespace>
+```
+
+## oidc-login
+Install krew
+```
+kubectl krew install oidc-login
+kubectl oidc-login setup \
+--oidc-issuer-url=https://{{ keycloak_domain }}/realms/master \
+--oidc-client-id={{ client_id }} \
+--oidc-client-secret={{ client_secret }} \
+--insecure-skip-tls-verify
+
+```
+
+## Troubleshoot oidc-login
+Clear cache
+```
+rm -rf ~/.kube/cache
+rm -rf ~/.kube/http-cache
+```
+
+## Ingress and Cert-Manager
+Make sure to indicate ingress class name and cert-manager issuer in ingress resource and its annotations
+```
+ingressClassName: nginx
+annotations: 
+    # add an annotation indicating the issuer to use.
+    cert-manager.io/cluster-issuer: ca-issuer
+enabled: true
+hostname: "{{ keycloak_domain }}"
+tls: true
+extraTls: # < placing a host in the TLS config will determine what ends up in the cert's subjectAltNames. 
+# Certmanager will generate secret with name keycloak.localdev.me-tls as initial TLS
+    - hosts:
+        - "{{ keycloak_domain }}"
+    secretName: keycloak.cluster-tls
+```
+
+## References:
+https://stackoverflow.com/questions/73883728/keycloak-admin-console-loading-indefinitely
+
+https://medium.com/@charled.breteche/kind-keycloak-securing-kubernetes-api-server-with-oidc-371c5faef902
+
+https://github.com/int128/kubelogin/issues/29
+
+https://andrewtarry.com/posts/custom-dns-in-kubernetes/
