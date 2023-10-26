@@ -23,6 +23,12 @@
   become: true
   import_tasks: dnsmasq.yaml  
 
+- name: Install local-path-provisioner
+  become: true
+  become_user: vagrant
+  import_tasks: local-path-provisioner.yaml
+
 - name: Install keycloak
   become: true
   import_tasks: keycloak.yaml
+

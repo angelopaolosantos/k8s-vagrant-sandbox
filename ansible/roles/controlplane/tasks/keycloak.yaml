@@ -38,7 +38,9 @@
     create_namespace: true
     values:
       global:
-        storageClass: local-storage
+        # storageClass: local-storage
+        # Make sure rancher local-path-provisioner is installed
+        storageClass: local-path
       auth:
         createAdminUser: true
         adminUser: admin

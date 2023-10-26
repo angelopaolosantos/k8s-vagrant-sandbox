@@ -102,6 +102,22 @@ extraTls: # < placing a host in the TLS config will determine what ends up in th
     secretName: keycloak.cluster-tls
 ```
 
+## Rancher Local Path Provisioner
+Create pvc using storage class local-path
+
+```
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: local-path-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 128Mi
+```
 ## References:
 https://stackoverflow.com/questions/73883728/keycloak-admin-console-loading-indefinitely
 
@@ -110,3 +126,5 @@ https://medium.com/@charled.breteche/kind-keycloak-securing-kubernetes-api-serve
 https://github.com/int128/kubelogin/issues/29
 
 https://andrewtarry.com/posts/custom-dns-in-kubernetes/
+
+https://github.com/rancher/local-path-provisioner
