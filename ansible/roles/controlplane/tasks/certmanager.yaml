@@ -28,20 +28,40 @@
     - cert-manager-cainjector
     - cert-manager-webhook
   register: cert_manager_deployment_ready
-  until: item in cert_manager_deployment_ready.stdout
 
-- debug: var=item.stdout
+- debug: var=cert_manager_deployment_ready
+
+- debug: msg="item.item={{item.item}}, item.stdout={{item.stdout}}, item.changed={{item.changed}}"
   with_items: "{{ cert_manager_deployment_ready.results }}"
 
+- debug: msg="Gets printed only if this item changed - {{item}}"
+  when: "{{item.changed == true}}"
+  with_items: "{{ cert_manager_deployment_ready.results }}"
+
+# - name: Create Cert-Manager Cluster Issuer
+#   shell: 
+#     cmd: |
+#       kubectl apply -f - <<EOF
+#       apiVersion: cert-manager.io/v1
+#       kind: ClusterIssuer
+#       metadata:
+#         name: ca-issuer
+#       spec:
+#         ca:
+#           secretName: root-ca
+#       EOF
+## Same as below tasks
+
+- name: Copy cert-manager manifests to kubemaster node
+  copy:
+    src: "{{ role_path }}/files/certmanager/"
+    remote_src: no
+    dest: /home/vagrant/certmanager/
+
 - name: Create Cert-Manager Cluster Issuer
-  shell: 
-    cmd: |
-      kubectl apply -f - <<EOF
-      apiVersion: cert-manager.io/v1
-      kind: ClusterIssuer
-      metadata:
-        name: ca-issuer
-      spec:
-        ca:
-          secretName: root-ca
-      EOF
+  delay: 10
+  register: create_issuer
+  until: create_issuer is not failed
+  retries: 30
+  shell: |
+      kubectl apply -f ./certmanager/
