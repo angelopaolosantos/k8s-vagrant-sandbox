@@ -118,6 +118,17 @@ spec:
     requests:
       storage: 128Mi
 ```
+
+## Run Ansible Manually
+```
+ansible-playbook  ansible/site.yaml --list-tags
+ansible-playbook example.yml --tags "configuration,packages" --list-tasks
+ansible-playbook -i .vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory ansible/site.yaml
+ansible-playbook -i .vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory ansible/site.yaml --tags "configuration,packages"
+ansible-playbook -i .vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory ansible/site.yaml --tags "all,never"
+ansible-playbook -i .vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory ansible/site.yaml --skip-tags "packages"
+```
+
 ## References:
 https://stackoverflow.com/questions/73883728/keycloak-admin-console-loading-indefinitely
 

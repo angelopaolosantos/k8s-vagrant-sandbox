@@ -35,7 +35,7 @@
   with_items: "{{ cert_manager_deployment_ready.results }}"
 
 - debug: msg="Gets printed only if this item changed - {{item}}"
-  when: "{{item.changed == true}}"
+  when: item.changed == true
   with_items: "{{ cert_manager_deployment_ready.results }}"
 
 # - name: Create Cert-Manager Cluster Issuer
