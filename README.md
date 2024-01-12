@@ -129,6 +129,25 @@ ansible-playbook -i .vagrant/provisioners/ansible/inventory/vagrant_ansible_inve
 ansible-playbook -i .vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory ansible/site.yaml --skip-tags "packages"
 ```
 
+## Prometheus and Grafana
+```
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install kube-prometheus-stack \
+  --create-namespace \
+  --namespace kube-prometheus-stack \
+  prometheus-community/kube-prometheus-stack
+kubectl -n kube-prometheus-stack get pods
+```
+Running a Prometheus Query
+```
+kubectl port-forward -n kube-prometheus-stack svc/kube-prometheus-stack-prometheus 9090:9090
+```
+Using Grafana Dashboards
+```
+kubectl port-forward -n svc/kube-prometheus-stack-grafana 8080:80
+```
+
 ## References:
 https://stackoverflow.com/questions/73883728/keycloak-admin-console-loading-indefinitely
 
@@ -139,3 +158,5 @@ https://github.com/int128/kubelogin/issues/29
 https://andrewtarry.com/posts/custom-dns-in-kubernetes/
 
 https://github.com/rancher/local-path-provisioner
+
+https://spacelift.io/blog/prometheus-kubernetes

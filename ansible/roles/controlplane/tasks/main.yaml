@@ -3,16 +3,22 @@
 - name: Install helm
   become: true
   import_tasks: helm.yaml
+  tags:
+  - helm
 
 - name: Install metallb
   become: true
   become_user: vagrant
   import_tasks: metallb.yaml
+  tags:
+  - metallb
 
 - name: Install ingress
   become: true
   become_user: vagrant
   import_tasks: ingress.yaml
+  tags:
+  - ingress
 
 - name: Install cert-manager
   become: true
@@ -23,14 +29,20 @@
 
 - name: Install dnsmasq
   become: true
-  import_tasks: dnsmasq.yaml  
+  import_tasks: dnsmasq.yaml
+  tags:
+  - dnsmasq
 
 - name: Install local-path-provisioner
   become: true
   become_user: vagrant
   import_tasks: local-path-provisioner.yaml
+  tags:
+  - local-path
 
 - name: Install keycloak
   become: true
   import_tasks: keycloak.yaml
+  tags:
+  - keycloak
 
