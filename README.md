@@ -68,7 +68,7 @@ $ kubectl delete pod keycloak-0 -n <namespace>
 
 Log into Keycloak
 ```
-kubectl port-forward -n kube-prometheus-stack svc/kube-prometheus-stack-grafana 8080:80
+kubectl port-forward -n keycloak svc/keycloak 8080:80
 ```
 
 ## oidc-login
