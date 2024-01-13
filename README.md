@@ -66,6 +66,11 @@ keycloak-postgresql-0   1/1     Running   0          xx
 $ kubectl delete pod keycloak-0 -n <namespace>
 ```
 
+Log into Keycloak
+```
+kubectl port-forward -n kube-prometheus-stack svc/kube-prometheus-stack-grafana 8080:80
+```
+
 ## oidc-login
 Install krew
 ```
@@ -145,7 +150,7 @@ kubectl port-forward -n kube-prometheus-stack svc/kube-prometheus-stack-promethe
 ```
 Using Grafana Dashboards
 ```
-kubectl port-forward -n svc/kube-prometheus-stack-grafana 8080:80
+kubectl port-forward -n kube-prometheus-stack svc/kube-prometheus-stack-grafana 8080:80
 ```
 
 ## References:
