@@ -64,3 +64,16 @@
   ansible.builtin.systemd:
     name: dnsmasq
     state: restarted
+
+- name: Copy configmap-coredns-dev.yaml. Point CoreDNS to DNSMASQ server
+  become_user: vagrant
+  copy:
+    src: "{{ role_path }}/files/dnsmasq/configmap-coredns-dev.yaml"
+    remote_src: no
+    dest: /home/vagrant/dnsmasq/
+
+- name: Add dnsmasq DNS server to resolv.conf
+  become_user: vagrant
+  shell: |
+    kubectl apply -f /home/vagrant/dnsmasq/configmap-coredns-dev.yaml
+    kubectl rollout restart -n kube-system deployment/coredns
