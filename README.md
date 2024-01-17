@@ -165,3 +165,7 @@ https://andrewtarry.com/posts/custom-dns-in-kubernetes/
 https://github.com/rancher/local-path-provisioner
 
 https://spacelift.io/blog/prometheus-kubernetes
+
+https://codeengineered.com/blog/2022/localdev-me/
+
+https://computingforgeeks.com/install-and-configure-dnsmasq-on-ubuntu/
