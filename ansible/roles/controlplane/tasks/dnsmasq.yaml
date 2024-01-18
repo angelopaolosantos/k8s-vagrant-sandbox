@@ -1,32 +1,6 @@
 ---
 # file: roles/controlplane/tasks/dnsmasq.yml
 
-- name: Enable dnsmasq
-  ansible.builtin.systemd:
-    name: systemd-resolved
-    enabled: false
-    masked: false
-    state: stopped
-
-- stat: path=/etc/resolv.conf
-  register: links
-- debug: msg="link exists"
-  when: links.stat.islnk is defined and links.stat.islnk
-
-- name: Remove symlink
-  file:
-    path: "/etc/resolv.conf"
-    state: absent
-  when: links.stat.islnk is defined and links.stat.islnk
-
-- name: Get ingress ip
-  become_user: vagrant
-  shell: |
-    kubectl get services --namespace ingress-nginx \
-    ingress-nginx-controller \  
-    --output jsonpath='{.status.loadBalancer.ingress[0].ip}'
-  register: ingress_ip
-
 - name: Install Dnsmasq
   apt:
     update_cache: yes
@@ -46,13 +20,40 @@
     masked: false
     state: started
 
+- name: Disable systemd-resolved
+  ansible.builtin.systemd:
+    name: systemd-resolved
+    enabled: false
+    masked: false
+    state: stopped
+
+- stat: path=/etc/resolv.conf
+  register: links
+
+- debug: msg="link exists"
+  when: links.stat.islnk is defined and links.stat.islnk
+
+- name: Remove symlink
+  file:
+    path: "/etc/resolv.conf"
+    state: absent
+  when: links.stat.islnk is defined and links.stat.islnk
+
+- name: Get ingress ip
+  become_user: vagrant
+  shell: |
+    kubectl get services --namespace ingress-nginx \
+    ingress-nginx-controller \  
+    --output jsonpath='{.status.loadBalancer.ingress[0].ip}'
+  register: ingress_ip
+
 - name: Create kubeadm.k8s.conf
   copy:
     dest: /etc/dnsmasq.d/kubeadm.k8s.conf
     content: |
       address=/{{ ingress_domain }}/{{ ingress_ip.stdout_lines[0] }}
 
-- name: Add dnsmasq DNS server to resolv.conf
+- name: Add dnsmasq DNS server to resolv.conf - localhost 127.0.0.1
   become_user: vagrant
   shell: |
     sudo tee /etc/resolv.conf <<EOF

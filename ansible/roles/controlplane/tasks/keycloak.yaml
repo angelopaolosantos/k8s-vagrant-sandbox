@@ -64,6 +64,8 @@
         enabled: true
         postgresqlPassword: password
 
+## Kubeapiserver pod doesn't resolve CoreDNS custom address, it seems to be intentional behavior in Kubernetes to avoid circular dependencies: as DNS is directly reflected by apiserver state.
+
 - name: Copy kube-apiserver manifests to kustomize base folder
   copy:
     src: "/etc/kubernetes/manifests/kube-apiserver.yaml"
