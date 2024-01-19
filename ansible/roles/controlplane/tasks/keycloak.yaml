@@ -66,7 +66,13 @@
       tls:
         enabled: true
         existingSecret: keycloak.cluster-tls
-      proxy: edge
+        usePem: true
+      extraEnvVars:
+        - name: KEYCLOAK_HOSTNAME
+          value: "{{ keycloak_domain }}"
+        - name: KEYCLOAK_HOSTNAME_STRICT_HTTPS
+          value: "true"
+      production: "true"
 
 ## Kubeapiserver pod doesn't resolve CoreDNS custom address, it seems to be intentional behavior in Kubernetes to avoid circular dependencies: as DNS is directly reflected by apiserver state.
 
@@ -77,13 +83,9 @@
     dest: "/home/vagrant/keycloak/kustomize/base/kube-apiserver.yaml"
   args: 
     force: no
-  tags:
-    - keycloak
 
 - name: Run kustomize to add host alias in kube-apiserver
   shell: |
     sudo kubectl kustomize overlays/dev | sudo tee /etc/kubernetes/manifests/kube-apiserver.yaml
-  tags:
-    - keycloak
   args:
     chdir: /home/vagrant/keycloak/kustomize/
