@@ -63,6 +63,10 @@
       postgresql:
         enabled: true
         postgresqlPassword: password
+      tls:
+        enabled: true
+        existingSecret: keycloak.cluster-tls
+      proxy: edge
 
 ## Kubeapiserver pod doesn't resolve CoreDNS custom address, it seems to be intentional behavior in Kubernetes to avoid circular dependencies: as DNS is directly reflected by apiserver state.
 
