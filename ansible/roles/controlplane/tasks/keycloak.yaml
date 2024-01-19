@@ -72,7 +72,7 @@
           value: "{{ keycloak_domain }}"
         - name: KEYCLOAK_HOSTNAME_STRICT_HTTPS
           value: "true"
-      production: "true"
+      production: true
 
 ## Kubeapiserver pod doesn't resolve CoreDNS custom address, it seems to be intentional behavior in Kubernetes to avoid circular dependencies: as DNS is directly reflected by apiserver state.
 
