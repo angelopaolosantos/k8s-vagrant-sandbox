@@ -63,6 +63,7 @@
       postgresql:
         enabled: true
         postgresqlPassword: password
+      ## Not required for edge proxy
       # tls:
       #   enabled: true
       #   existingSecret: keycloak.cluster-tls
