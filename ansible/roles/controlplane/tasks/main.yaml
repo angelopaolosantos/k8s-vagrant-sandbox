@@ -46,3 +46,16 @@
   tags:
   - keycloak
 
+- name: Install sealed-secrets
+  become: true
+  import_tasks: sealed-secrets.yaml
+  tags:
+  - sealed-secrets
+
+- name: Install argocd
+  become: true
+  import_tasks: argocd.yaml
+  tags:
+  - argocd
+
+

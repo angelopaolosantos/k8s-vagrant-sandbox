@@ -4,3 +4,5 @@ ansible/certs/*.pem
 ansible/.kube/*/*.conf
 *.pem
 root-ca.srl
+*.crt
+*.key

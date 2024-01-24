@@ -1,0 +1,17 @@
+---
+# file: roles/controlplane/tasks/argocd.yaml
+
+- name: Add helm repository
+  become_user: vagrant
+  kubernetes.core.helm_repository:
+    name: argo
+    repo_url: https://argoproj.github.io/argo-helm
+
+- name: Install ArgoCD via helm
+  become_user: vagrant
+  kubernetes.core.helm:
+    name: argocd
+    chart_ref: argo/argo-cd
+    release_namespace: argocd
+    create_namespace: true
+    
