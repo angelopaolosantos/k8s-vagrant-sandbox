@@ -15,3 +15,9 @@
     release_namespace: argocd
     create_namespace: true
     
+- name: Install ArgoCD CLI
+  become_user: vagrant
+  shell: |
+    curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+    sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+    rm argocd-linux-amd64

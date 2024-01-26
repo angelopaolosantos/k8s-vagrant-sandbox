@@ -20,12 +20,12 @@
   tags:
   - ingress
 
-- name: Install cert-manager
-  become: true
-  become_user: vagrant
-  import_tasks: certmanager.yaml
-  tags:
-  - cert-manager
+# - name: Install cert-manager
+#   become: true
+#   become_user: vagrant
+#   import_tasks: certmanager.yaml
+#   tags:
+#   - cert-manager
 
 - name: Install dnsmasq
   become: true
@@ -40,11 +40,11 @@
   tags:
   - local-path
 
-- name: Install keycloak
-  become: true
-  import_tasks: keycloak.yaml
-  tags:
-  - keycloak
+# - name: Install keycloak
+#   become: true
+#   import_tasks: keycloak.yaml
+#   tags:
+#   - keycloak
 
 - name: Install sealed-secrets
   become: true
