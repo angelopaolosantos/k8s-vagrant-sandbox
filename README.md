@@ -153,6 +153,12 @@ Using Grafana Dashboards
 kubectl port-forward -n kube-prometheus-stack svc/kube-prometheus-stack-grafana 8080:80
 ```
 
+## ArgoCD
+Get initial password
+```
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+```
+
 ## References:
 https://stackoverflow.com/questions/73883728/keycloak-admin-console-loading-indefinitely
 
@@ -169,3 +175,5 @@ https://spacelift.io/blog/prometheus-kubernetes
 https://codeengineered.com/blog/2022/localdev-me/
 
 https://computingforgeeks.com/install-and-configure-dnsmasq-on-ubuntu/
+
+https://github.com/bitnami-labs/sealed-secrets/blob/main/docs/bring-your-own-certificates.md
