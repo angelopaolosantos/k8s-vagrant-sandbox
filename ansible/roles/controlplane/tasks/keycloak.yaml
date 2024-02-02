@@ -8,7 +8,7 @@
     remote_src: no
     dest: /home/vagrant/keycloak/
 
-# Use task below if cert-manager is not used to create keycloak secret tls, follow Readme instructions to generate key and cert. 
+## Use task below if cert-manager is not used to create keycloak secret tls, follow Readme instructions to generate key and cert. 
 #
 # - name: create keycloak secret 
 #   shell: |
@@ -18,67 +18,69 @@
 #   args:
 #     chdir: /home/vagrant/keycloak/
 
-- name: Apply keycloak manifests to create keycloak roles, and storage classes and persistent volume
-  become_user: vagrant
-  shell: |
-    kubectl apply -f ./keycloak/
+## ArgoCD will install instead
+#
+# - name: Apply keycloak manifests to create keycloak roles, and storage classes and persistent volume
+#   become_user: vagrant
+#   shell: |
+#     kubectl apply -f ./keycloak/
 
-- name: Add helm repository
-  become_user: vagrant
-  kubernetes.core.helm_repository:
-    name: bitnami
-    repo_url: https://charts.bitnami.com/bitnami
+# - name: Add helm repository
+#   become_user: vagrant
+#   kubernetes.core.helm_repository:
+#     name: bitnami
+#     repo_url: https://charts.bitnami.com/bitnami
 
-- name: Install Keycloak via helm
-  become_user: vagrant
-  kubernetes.core.helm:
-    name: keycloak
-    chart_ref: bitnami/keycloak
-    release_namespace: keycloak
-    create_namespace: true
-    values:
-      global:
-        # storageClass: local-storage
-        # Make sure rancher local-path-provisioner is installed
-        storageClass: local-path
-      auth:
-        createAdminUser: true
-        adminUser: admin
-        adminPassword: admin
-        managementUser: manager
-        managementPassword: manager
-      proxyAddressForwarding: true
-      ingress:
-        ingressClassName: nginx
-        annotations: 
-          # add an annotation indicating the issuer to use.
-          cert-manager.io/cluster-issuer: ca-issuer
-        enabled: true
-        hostname: "{{ keycloak_domain }}"
-        tls: true
-        extraTls: # < placing a host in the TLS config will determine what ends up in the cert's subjectAltNames
-          - hosts:
-              - "{{ keycloak_domain }}"
-            secretName: keycloak.cluster-tls
-      postgresql:
-        enabled: true
-        postgresqlPassword: password
-      ## Not required for edge proxy
-      # tls:
-      #   enabled: true
-      #   existingSecret: keycloak.cluster-tls
-      #   usePem: true
-      extraEnvVars:
-        - name: KEYCLOAK_HOSTNAME
-          value: "{{ keycloak_domain }}"
-        # - name: KEYCLOAK_HOSTNAME_URL
-        #   value: "https://{{ keycloak_domain }}:8443"
-        # - name: KEYCLOAK_HOSTNAME_ADMIN_URL
-        #   value: "https://{{ keycloak_domain }}:8443/auth"
-        - name: KEYCLOAK_HOSTNAME_STRICT_HTTPS
-          value: "true"
-      proxy: edge 
-      # production: true
+# - name: Install Keycloak via helm
+#   become_user: vagrant
+#   kubernetes.core.helm:
+#     name: keycloak
+#     chart_ref: bitnami/keycloak
+#     release_namespace: keycloak
+#     create_namespace: true
+#     values:
+#       global:
+#         # storageClass: local-storage
+#         # Make sure rancher local-path-provisioner is installed
+#         storageClass: local-path
+#       auth:
+#         createAdminUser: true
+#         adminUser: admin
+#         adminPassword: admin
+#         managementUser: manager
+#         managementPassword: manager
+#       proxyAddressForwarding: true
+#       ingress:
+#         ingressClassName: nginx
+#         annotations: 
+#           # add an annotation indicating the issuer to use.
+#           cert-manager.io/cluster-issuer: ca-issuer
+#         enabled: true
+#         hostname: "{{ keycloak_domain }}"
+#         tls: true
+#         extraTls: # < placing a host in the TLS config will determine what ends up in the cert's subjectAltNames
+#           - hosts:
+#               - "{{ keycloak_domain }}"
+#             secretName: keycloak.cluster-tls
+#       postgresql:
+#         enabled: true
+#         postgresqlPassword: password
+#       ## Not required for edge proxy
+#       # tls:
+#       #   enabled: true
+#       #   existingSecret: keycloak.cluster-tls
+#       #   usePem: true
+#       extraEnvVars:
+#         - name: KEYCLOAK_HOSTNAME
+#           value: "{{ keycloak_domain }}"
+#         # - name: KEYCLOAK_HOSTNAME_URL
+#         #   value: "https://{{ keycloak_domain }}:8443"
+#         # - name: KEYCLOAK_HOSTNAME_ADMIN_URL
+#         #   value: "https://{{ keycloak_domain }}:8443/auth"
+#         - name: KEYCLOAK_HOSTNAME_STRICT_HTTPS
+#           value: "true"
+#       proxy: edge 
+#       # production: true
 
 ## Kubeapiserver pod doesn't resolve CoreDNS custom address, it seems to be intentional behavior in Kubernetes to avoid circular dependencies: as DNS is directly reflected by apiserver state.
 

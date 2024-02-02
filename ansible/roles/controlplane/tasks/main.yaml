@@ -13,12 +13,12 @@
   tags:
   - metallb
 
-- name: Install ingress
-  become: true
-  become_user: vagrant
-  import_tasks: ingress.yaml
-  tags:
-  - ingress
+# - name: Install ingress
+#   become: true
+#   become_user: vagrant
+#   import_tasks: ingress.yaml
+#   tags:
+#   - ingress
 
 # - name: Install cert-manager
 #   become: true
@@ -40,11 +40,11 @@
   tags:
   - local-path
 
-# - name: Install keycloak
-#   become: true
-#   import_tasks: keycloak.yaml
-#   tags:
-#   - keycloak
+- name: Install keycloak
+  become: true
+  import_tasks: keycloak.yaml
+  tags:
+  - keycloak
 
 - name: Install sealed-secrets
   become: true
