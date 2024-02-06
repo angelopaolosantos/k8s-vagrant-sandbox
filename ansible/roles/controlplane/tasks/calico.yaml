@@ -1,0 +1,30 @@
+---
+# file: roles/controlplane/tasks/calico.yaml
+
+- name: Create a directory if it does not exist
+  ansible.builtin.file:
+    path: ~/calico
+    state: directory
+    mode: '0755'
+
+- name: Copy calico custom resources
+  become_user: vagrant
+  copy:
+    src: "{{ role_path }}/files/calico/custom-resources.yaml"
+    remote_src: no
+    dest: ~/calico/custom-resources.yaml
+
+- name: Download Tigera Calico operator and custom resource definitions.
+  become_user: vagrant
+  ansible.builtin.get_url:
+    url: https://raw.githubusercontent.com/projectcalico/calico/v3.27.0/manifests/tigera-operator.yaml
+    dest: ~/calico/tigera-operator.yaml
+    mode: '0664'
+
+- name: Install the Tigera Calico operator and custom resource definitions.
+  shell: |
+    kubectl apply --server-side=true -f ~/calico/tigera-operator.yaml
+
+- name: Install Calico
+  shell: |
+    kubectl apply -f ~/calico/custom-resources.yaml

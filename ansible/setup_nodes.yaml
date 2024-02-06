@@ -95,11 +95,11 @@
       cmd: sudo chmod go-r ~/.kube/config
     become_user: vagrant
 
-  - name: Install Weave Net
-    shell:
-      cmd: |
-        kubectl apply -f https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml
-    become_user: vagrant
+  # - name: Install Weave Net
+  #   shell:
+  #     cmd: |
+  #       kubectl apply -f https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml
+  #   become_user: vagrant
 
   - name: Get join command
     shell: kubeadm token create --print-join-command 2>/dev/null

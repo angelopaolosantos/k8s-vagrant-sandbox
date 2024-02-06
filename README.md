@@ -159,6 +159,11 @@ Get initial password
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 ```
 
+## Linkerd
+Linkerd doesn't pull its required cert from the secret. You need to extract it manually and paste it on the application yaml. Syncing it will revert back to an empty cert yaml.
+
+https://linkerd.io/2.14/tasks/gitops/
+
 ## References:
 https://stackoverflow.com/questions/73883728/keycloak-admin-console-loading-indefinitely
 

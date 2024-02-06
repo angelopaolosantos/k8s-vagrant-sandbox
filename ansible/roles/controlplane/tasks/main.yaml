@@ -1,10 +1,18 @@
 # ---
 # file: roles/common/tasks/main.yaml
+
 - name: Install helm
   become: true
   import_tasks: helm.yaml
   tags:
   - helm
+
+- name: Install calico
+  become: true
+  become_user: vagrant
+  import_tasks: calico.yaml
+  tags:
+  - calico
 
 - name: Install metallb
   become: true
@@ -13,25 +21,12 @@
   tags:
   - metallb
 
-# - name: Install ingress
-#   become: true
-#   become_user: vagrant
-#   import_tasks: ingress.yaml
-#   tags:
-#   - ingress
-
 # - name: Install cert-manager
 #   become: true
 #   become_user: vagrant
 #   import_tasks: certmanager.yaml
 #   tags:
 #   - cert-manager
-
-- name: Install dnsmasq
-  become: true
-  import_tasks: dnsmasq.yaml
-  tags:
-  - dnsmasq
 
 - name: Install local-path-provisioner
   become: true
@@ -57,5 +52,18 @@
   import_tasks: argocd.yaml
   tags:
   - argocd
+
+- name: Install ingress
+  become: true
+  become_user: vagrant
+  import_tasks: ingress.yaml
+  tags:
+  - ingress
+
+- name: Install dnsmasq
+  become: true
+  import_tasks: dnsmasq.yaml
+  tags:
+  - dnsmasq
 
 
